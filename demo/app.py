@@ -49,12 +49,12 @@ ALL_FIELDS = STRING_FIELDS + NUMBER_FIELDS
 
 
 def parse_prompt(prompt: str) -> dict:
-    """규칙 기반 파서 (실제 LLM 아님): 'field_name: value' 또는 'field_name=value'
-    형태로 프롬프트에 적힌 14개 필드를 찾아낸다. 못 찾은 필드는 None으로 남겨
+    """규칙 기반 파서 (실제 LLM 아님): 'field_name값은 VALUE입니다' 형태로
+    프롬프트에 적힌 14개 필드를 찾아낸다. 못 찾은 필드는 None으로 남겨
     MCP 서버 자체의 VALIDATION_ERROR 경로를 그대로 타게 한다."""
     values = {}
     for field in ALL_FIELDS:
-        match = re.search(rf"{field}\s*[:=]\s*([^\s,;]+)", prompt, re.IGNORECASE)
+        match = re.search(rf"{field}\s*값은\s*([^\s,;]+?)\s*입니다", prompt, re.IGNORECASE)
         if not match:
             values[field] = None
             continue
@@ -119,21 +119,20 @@ HTML_PAGE = """<!doctype html>
 <p class="flow">사용자 프롬프트 → (규칙 기반 파서 = 이 데모의 "에이전트") → 실제 MCP HTTP 호출(predict_luminance) → 응답 → 자연어 요약</p>
 <p class="hint">MCP_URL: http://127.0.0.1:8090/mcp — 이 데모는 서버를 대신 띄우지 않는다. 먼저 <code>py -3.12 mcp_server/server.py</code>로 서버를 실행해둬야 한다.</p>
 
-<textarea id="prompt" placeholder="예시:
-host_material_id: HOST_001
-host_homo: -5.70
-host_lumo: -2.60
-host_t1: 2.80
-host_s1: 3.10
-dopant_material_id: DOPANT_001
-dopant_homo: -5.50
-dopant_lumo: -2.80
-dopant_t1: 2.50
-dopant_s1: 2.90
-eml_thickness_nm: 30.0
-dopant_concentration_percent: 8.0
-voltage_v: 4.2
-current_density_ma_cm2: 10.0"></textarea>
+<textarea id="prompt">host_material_id값은 HOST_001입니다.
+host_homo값은 -5.70입니다.
+host_lumo값은 -2.60입니다.
+host_t1값은 2.80입니다.
+host_s1값은 3.10입니다.
+dopant_material_id값은 DOPANT_001입니다.
+dopant_homo값은 -5.50입니다.
+dopant_lumo값은 -2.80입니다.
+dopant_t1값은 2.50입니다.
+dopant_s1값은 2.90입니다.
+eml_thickness_nm값은 30.0입니다.
+dopant_concentration_percent값은 8.0입니다.
+voltage_v값은 4.2입니다.
+current_density_ma_cm2값은 10.0입니다.</textarea>
 <br>
 <button id="run">predict_luminance 실행</button>
 <span id="status"></span>
