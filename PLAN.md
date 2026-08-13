@@ -30,7 +30,7 @@
 - 내가 직접 승인할 지점: Git 커밋/초기화 시점
 
 ## GitHub 저장소 URL
-(아직 안 정함)
+https://github.com/Anthony-L-Choi/VibeCodingProject
 
 ## 1:1 코칭에서 가장 묻고 싶은 것
 - 해당 프로젝트가 가능한 주제인지
