@@ -121,7 +121,7 @@
     },
     {
       "id": "LB-107",
-      "status": "blocked",
+      "status": "done",
       "priority": "핵심",
       "category": "화면",
       "title": "MCP 서버 스캐폴딩 및 predict_luminance Tool 등록 (정상 입력만)",
@@ -132,12 +132,12 @@
         "LB-106"
       ],
       "doc": "SPEC.md#6.1",
-      "done_at": null,
+      "done_at": "2026-08-13T11:41:53",
       "note": "이 작업에서는 입력 검증을 넣지 않는다(LB-109에서 추가). Tool은 predict_luminance 1개만 등록한다. 현재 이 컴퓨터의 Python이 3.9.13뿐이라 공식 MCP SDK(3.10+ 필요) 설치가 안 되어 blocked — 사용자가 Python 3.10+ 설치 후 재개."
     },
     {
       "id": "LB-108",
-      "status": "todo",
+      "status": "blocked",
       "priority": "핵심",
       "category": "화면",
       "title": ".mcp.json 작성 및 Claude Code 등록",
@@ -149,11 +149,11 @@
       ],
       "doc": "SPEC.md#6.4",
       "done_at": null,
-      "note": "project 범위로 저장소에 커밋한다(local 범위는 개인 전용이라 코칭·발표에서 재현이 안 됨). 최초 사용 시 Claude Code를 대화형으로 한 번 실행해 신뢰 승인을 통과해야 한다."
+      "note": "project 범위로 저장소에 커밋한다(local 범위는 개인 전용이라 코칭·발표에서 재현이 안 됨). 최초 사용 시 Claude Code를 대화형으로 한 번 실행해 신뢰 승인을 통과해야 한다. .mcp.json은 만들어 커밋했고 claude mcp list에서 인식은 되지만 \"Pending approval\" 상태 — 사용자가 대화형 claude 세션에서 승인해야 완료된다."
     },
     {
       "id": "LB-109",
-      "status": "todo",
+      "status": "done",
       "priority": "검증",
       "category": "검증",
       "title": "필수 필드·타입 입력 검증 추가",
@@ -164,12 +164,12 @@
         "LB-107"
       ],
       "doc": "SPEC.md#6.2",
-      "done_at": null,
+      "done_at": "2026-08-13T11:41:53",
       "note": "SPEC.md 6.2/6.3 형식 그대로 — 범위 검증은 하지 않고 필드 존재·JSON 구조·타입만 확인한다."
     },
     {
       "id": "LB-110",
-      "status": "todo",
+      "status": "done",
       "priority": "검증",
       "category": "검증",
       "title": "MODEL_NOT_LOADED / INTERNAL_ERROR 처리 추가",
@@ -180,7 +180,7 @@
         "LB-107"
       ],
       "doc": "SPEC.md#6.3",
-      "done_at": null,
+      "done_at": "2026-08-13T11:41:53",
       "note": "SPEC.md 6.3 에러 코드 표 기준. DATABASE_NOT_INITIALIZED·DATASET_NOT_FOUND는 이번 스코프에 없으므로 구현하지 않는다."
     },
     {

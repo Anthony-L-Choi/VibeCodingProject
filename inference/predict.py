@@ -27,6 +27,8 @@ _model = None
 def _load_model() -> CatBoostRegressor:
     global _model
     if _model is None:
+        if not os.path.exists(_MODEL_PATH):
+            raise FileNotFoundError(f"model file not found: {_MODEL_PATH}")
         model = CatBoostRegressor()
         model.load_model(_MODEL_PATH)
         _model = model

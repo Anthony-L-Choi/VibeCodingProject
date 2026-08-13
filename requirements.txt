@@ -1,1 +1,3 @@
+# Python 3.10 이상 필요 (fastmcp/mcp SDK 제약)
 catboost>=1.2
+fastmcp>=3.0

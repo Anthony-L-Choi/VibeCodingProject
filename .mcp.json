@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "oled-luminance": {
+      "type": "stdio",
+      "command": "py",
+      "args": ["-3.12", "mcp_server/server.py"],
+      "env": {}
+    }
+  }
+}

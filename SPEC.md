@@ -217,18 +217,23 @@ Claude Code가 이 서버를 stdio로 실행할 때 `CLAUDE_PROJECT_DIR` 환경�
   "mcpServers": {
     "oled-luminance": {
       "type": "stdio",
-      "command": "python",
-      "args": ["mcp_server/server.py"],
+      "command": "py",
+      "args": ["-3.12", "mcp_server/server.py"],
       "env": {}
     }
   }
 }
 ```
 
+`command`를 `python`이 아니라 `py`/`-3.12`로 명시한 이유: 이 컴퓨터의 기본 `python`은 3.9인데
+`fastmcp`/`mcp` SDK는 Python 3.10 이상이 필요하다(원 요구사항 문서에는 없던 제약이며,
+이번 구현에서 Python 3.12를 새로 설치해 해결했다). `py` 런처로 버전을 고정해 어떤 셸에서 실행해도
+같은 인터프리터를 쓰게 한다.
+
 CLI로 동일하게 등록할 수도 있다 (`--` 뒤가 실제 실행 명령):
 
 ```bash
-claude mcp add --transport stdio --scope project oled-luminance -- python mcp_server/server.py
+claude mcp add --transport stdio --scope project oled-luminance -- py -3.12 mcp_server/server.py
 ```
 
 **최초 승인**: project 범위 서버는 처음 쓸 때 신뢰 승인이 필요하다. Claude Code를 대화형으로 한 번 실행해
