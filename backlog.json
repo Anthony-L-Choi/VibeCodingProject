@@ -137,7 +137,7 @@
     },
     {
       "id": "LB-108",
-      "status": "blocked",
+      "status": "done",
       "priority": "핵심",
       "category": "화면",
       "title": ".mcp.json 작성 및 Claude Code 등록",
@@ -148,8 +148,8 @@
         "LB-107"
       ],
       "doc": "SPEC.md#6.4",
-      "done_at": null,
-      "note": "project 범위로 저장소에 커밋한다(local 범위는 개인 전용이라 코칭·발표에서 재현이 안 됨). 최초 사용 시 Claude Code를 대화형으로 한 번 실행해 신뢰 승인을 통과해야 한다. .mcp.json은 만들어 커밋했고 claude mcp list에서 인식은 되지만 \"Pending approval\" 상태 — 사용자가 대화형 claude 세션에서 승인해야 완료된다."
+      "done_at": "2026-08-13T11:54:21",
+      "note": "project 범위로 저장소에 커밋한다(local 범위는 개인 전용이라 코칭·발표에서 재현이 안 됨). 최초 사용 시 Claude Code를 대화형으로 한 번 실행해 신뢰 승인을 통과해야 한다. .mcp.json은 만들어 커밋했고 claude mcp list에서 인식은 되지만 \"Pending approval\" 상태 — 사용자가 대화형 claude 세션에서 승인해야 완료된다. catboost import를 predict_luminance() 첫 호출 시점으로 지연시켜(inference/predict.py) 서버 기동 시간을 줄인 뒤 claude mcp list에서 Connected로 확인됨."
     },
     {
       "id": "LB-109",

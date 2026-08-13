@@ -1,7 +1,5 @@
 import os
 
-from catboost import CatBoostRegressor
-
 # 순서가 models/train_model.py의 FEATURE_ORDER와 반드시 동일해야 한다.
 FEATURE_ORDER = [
     "host_homo",
@@ -24,11 +22,16 @@ _MODEL_PATH = os.path.join(_PROJECT_DIR, "models", "luminance_model.cbm")
 _model = None
 
 
-def _load_model() -> CatBoostRegressor:
+def _load_model():
+    # catboost import는 무겁다(수 초) — predict_luminance()가 처음 호출될 때까지 미룬다.
+    # MCP 서버 기동 시 이 모듈이 import되는 순간 catboost까지 로드되면
+    # stdio 연결 타임아웃을 넘겨 CONNECTION_CLOSED가 날 수 있다.
     global _model
     if _model is None:
         if not os.path.exists(_MODEL_PATH):
             raise FileNotFoundError(f"model file not found: {_MODEL_PATH}")
+        from catboost import CatBoostRegressor
+
         model = CatBoostRegressor()
         model.load_model(_MODEL_PATH)
         _model = model
