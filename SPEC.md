@@ -55,7 +55,7 @@ PLAN.md ③ 기준:
 }
 ```
 
-필수 필드: 위 13개 전부. `null` 허용 필드 없음 (원 문서와 달리 전극 Layer가 없어 `null` 케이스가 발생하지 않음).
+필수 필드: 위 14개 전부. `null` 허용 필드 없음 (원 문서와 달리 전극 Layer가 없어 `null` 케이스가 발생하지 않음).
 
 ### 2.2 출력 스키마
 
@@ -114,14 +114,14 @@ Material ID는 `HOST_001`~`HOST_050`, `DOPANT_001`~`DOPANT_050` 중 랜덤 선�
 
 ## 4. Phase 2 — CatBoost 모델 학습
 
-**입력 Feature**: 2.1의 13개 필드에서 Material ID 2개(host/dopant)를 제외한 11개 수치 Feature 사용.
+**입력 Feature**: 2.1의 14개 필드에서 Material ID 2개(host/dopant)를 제외한 12개 수치 Feature 사용.
 (Material ID는 랜덤 생성으로 luminance와 무관하므로 CatBoost의 Categorical Feature로 포함하지 않는다 — 포함해도 무방하나 이번 스코프에서는 제외해 단순화한다.)
 
 **Target**: `target.luminance_cd_m2`
 
 **학습**: `models/train_model.py`
 1. `data/data.json` 로드
-2. 11개 Feature, 1개 Target으로 CatBoostRegressor 학습 (하이퍼파라미터는 기본값 사용, 튜닝 없음)
+2. 12개 Feature, 1개 Target으로 CatBoostRegressor 학습 (하이퍼파라미터는 기본값 사용, 튜닝 없음)
 3. Train/Test 분리는 하되(예: 80/20), **평가 지표를 통과 기준으로 삼지 않는다** — 학습이 에러 없이 끝나고 파일이 저장되면 완료.
 
 **출력**: `models/luminance_model.cbm`
@@ -139,11 +139,11 @@ Material ID는 `HOST_001`~`HOST_050`, `DOPANT_001`~`DOPANT_050` 중 랜덤 선�
 
 ```python
 def predict_luminance(input_data: dict) -> float:
-    """input_data는 2.1 입력 스키마(13개 필드)를 따른다.
+    """input_data는 2.1 입력 스키마(14개 필드)를 따른다.
     models/luminance_model.cbm을 로드해 luminance_cd_m2를 반환한다."""
 ```
 
-내부 동작: 모델 로드(모듈 임포트 시 1회) → 11개 Feature 벡터로 변환 → `model.predict()` → `float` 반환.
+내부 동작: 모델 로드(모듈 임포트 시 1회) → 12개 Feature 벡터로 변환 → `model.predict()` → `float` 반환.
 
 **모델 파일 경로 해석**: `models/luminance_model.cbm` 경로는 현재 작업 디렉터리(cwd)에 의존하지 않는다.
 Claude Code가 이 서버를 stdio로 실행할 때 `CLAUDE_PROJECT_DIR` 환경변수(프로젝트 루트)를 서버 프로세스에
@@ -173,7 +173,7 @@ Claude Code가 이 서버를 stdio로 실행할 때 `CLAUDE_PROJECT_DIR` 환경�
 
 원 문서 5.1절 기준 — 범위 검증은 하지 않고 다음만 확인한다.
 
-- 13개 필수 필드가 모두 존재하는가
+- 14개 필수 필드가 모두 존재하는가
 - JSON 구조가 올바른가 (object, 배열 아님)
 - 각 필드 타입이 맞는가 (`*_material_id`는 string, 나머지는 number)
 
