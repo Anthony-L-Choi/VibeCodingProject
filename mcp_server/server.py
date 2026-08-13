@@ -1,6 +1,5 @@
 import os
 import sys
-from typing import Any
 
 sys.path.insert(0, os.environ.get("CLAUDE_PROJECT_DIR", os.path.dirname(os.path.dirname(__file__))))
 
@@ -8,7 +7,16 @@ from fastmcp import FastMCP
 
 from inference.predict import predict_luminance as run_prediction
 
-mcp = FastMCP("oled-luminance")
+mcp = FastMCP(
+    "oled-luminance",
+    instructions=(
+        "OLED 소자의 EML(발광층) Host/Dopant 물성치와 구동조건(전압, 전류밀도)을 입력받아 "
+        "CatBoost 회귀 모델로 Luminance(cd/m^2)를 예측하는 서버다. "
+        "predict_luminance Tool 1개만 제공하며, 이 서버는 학습 데이터가 완전 무작위로 생성된 "
+        "Synthetic 데이터 기반이라 예측값에 물리적 신뢰성은 없다 — MCP 파이프라인(Dataset 생성, "
+        "모델 학습, 추론, Tool 호출) 자체가 정상 동작하는지 확인하기 위한 프로토타입이다."
+    ),
+)
 
 STRING_FIELDS = ["host_material_id", "dopant_material_id"]
 NUMBER_FIELDS = [
@@ -68,20 +76,20 @@ def _validate(values: dict) -> dict | None:
 
 @mcp.tool()
 def predict_luminance(
-    host_material_id: Any = None,
-    host_homo: Any = None,
-    host_lumo: Any = None,
-    host_t1: Any = None,
-    host_s1: Any = None,
-    dopant_material_id: Any = None,
-    dopant_homo: Any = None,
-    dopant_lumo: Any = None,
-    dopant_t1: Any = None,
-    dopant_s1: Any = None,
-    eml_thickness_nm: Any = None,
-    dopant_concentration_percent: Any = None,
-    voltage_v: Any = None,
-    current_density_ma_cm2: Any = None,
+    host_material_id: str | None = None,
+    host_homo: float | None = None,
+    host_lumo: float | None = None,
+    host_t1: float | None = None,
+    host_s1: float | None = None,
+    dopant_material_id: str | None = None,
+    dopant_homo: float | None = None,
+    dopant_lumo: float | None = None,
+    dopant_t1: float | None = None,
+    dopant_s1: float | None = None,
+    eml_thickness_nm: float | None = None,
+    dopant_concentration_percent: float | None = None,
+    voltage_v: float | None = None,
+    current_density_ma_cm2: float | None = None,
 ) -> dict:
     """OLED EML(Host/Dopant) 물성치와 구동조건으로 Luminance(cd/m^2)를 예측한다.
     HOMO/LUMO/T1/S1, EML 두께, Dopant 농도, 전압, 전류밀도를 입력받아
@@ -103,4 +111,6 @@ def predict_luminance(
 
 
 if __name__ == "__main__":
-    mcp.run(transport="stdio")
+    # 로컬 전용 원격(streamable-HTTP) 서버. 127.0.0.1에만 바인딩해 이 컴퓨터 밖에서는
+    # 접근할 수 없다 — 외부 공개 배포(Cloudflare Workers 등)는 SPEC.md#9에 비범위로 명시.
+    mcp.run(transport="http", host="127.0.0.1", port=8090, path="/mcp")

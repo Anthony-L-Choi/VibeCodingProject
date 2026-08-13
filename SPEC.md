@@ -11,10 +11,46 @@
 | 입력 검증·에러 응답 | 포함 (원 문서 10.4절 공통 에러 스키마 사용) |
 | 아키텍처 수준 | 최소 구현 (Model Interface 추상화 없음, CatBoost 직접 사용) |
 | MCP 서버 등록 범위 | project 범위 — `.mcp.json`을 저장소에 커밋해 팀·코칭 리뷰어와 공유 (아래 6.4절 참고) |
+| MCP 서버 개발 방법론 | `mcp-server-dev`(`build-mcp-server`) 스킬의 Phase 1~6 프레임워크 적용 — 최초 결론은 기존 결정과 동일 (0절 참고) |
+| MCP 서버 전송 방식 | HTTP, 이 컴퓨터에서만 접근 가능한 로컬 전용(`http://127.0.0.1:8090/mcp`) — 최초 구현은 stdio였으나 사용자 요청으로 변경 (6절 참고) |
 
 `code.claude.com/docs/ko/mcp` 문서를 참고해 Claude Code가 MCP 서버에 연결하는 방식(등록 명령·범위·환경변수)을
 6.4절에 반영했다. 이 문서는 Claude Code가 클라이언트로서 서버에 *연결*하는 방법을 설명할 뿐, 서버 코드 자체를
-Python으로 작성하는 방법은 다루지 않는다 — 서버 구현은 기존 5·6절 스펙을 그대로 따른다.
+Python으로 작성하는 방법은 다루지 않는다 — 서버 구현은 0절의 스킬 프레임워크로 결정하고 5·6절 스펙으로 구체화했다.
+
+---
+
+## 0. MCP 서버 개발 방법론 — `mcp-server-dev` 스킬 적용
+
+6절(MCP 서버) 설계는 `mcp-server-dev`(`claude-plugins-official` 마켓플레이스) 플러그인의 `build-mcp-server`
+스킬이 정의한 Phase 1~6 의사결정 프레임워크를 따라 도출했다. 스킬은 Phase 1에서 사용 사례를 인터뷰 형식으로
+확인한 뒤 Phase 2~4에서 배포 모델·Tool 설계 패턴·프레임워크를 추천한다.
+
+### Phase 1 — 사용 사례 인터뷰
+
+| 질문 | 이 프로젝트의 답 |
+|---|---|
+| 무엇에 연결하는가? | 외부 연동 없음 — CatBoost 모델을 이용한 순수 로컬 연산 |
+| 누가 쓰는가? | 본인 1인 (Capstone 과제·코칭 리뷰용, 불특정 다수 배포 대상 아님) |
+| Action(Tool) 개수 | 1개 (`predict_luminance`) |
+| 중간 입력/풍부한 UI 필요 여부 | 없음 — 구조화된 입력을 한 번에 받아 한 번에 응답 |
+| 업스트림 인증 | 없음 |
+
+### Phase 2~4 — 배포 모델 / Tool 패턴 / 프레임워크
+
+| Phase | 스킬의 결정 매트릭스 적용 | 채택 |
+|---|---|---|
+| Phase 2 — 배포 모델 | "Just me / my team" + "Nothing external — pure logic" → **Local stdio** (개인 프로토타입 한정 권장; 스킬은 항상 "배포용으로는 MCPB가 낫다"는 캐비앗을 붙이는데, 이번 프로젝트는 배포 대상이 아니라 그 업그레이드 경로는 9절에서 명시적 비범위로 둔다) | ~~Local stdio~~ → **HTTP(로컬 전용)로 변경**. 최초엔 스킬 권장대로 stdio를 썼으나, 이후 사용자가 명시적으로 HTTP 전송을 요청해 바꿨다. 외부 공개 배포(Cloudflare Workers 등, 스킬이 말하는 "진짜" 원격 HTTP)는 아니고 `127.0.0.1`에만 바인딩한 로컬 전용 HTTP다 — 9절에 비범위로 명시. |
+| Phase 3 — Tool 설계 패턴 | Action 15개 미만 → **One tool per action** | `predict_luminance` 1개만 등록 |
+| Phase 4 — 프레임워크 | Python + 기존 Python 라이브러리(CatBoost) 래핑 → **FastMCP 3.x** | FastMCP |
+
+### Phase 5~6 — 스캐폴딩 / 테스트
+
+- **Phase 5**: Local stdio 프로토타입은 스킬에 전용 reference 파일이 없어 "인라인으로 직접 스캐폴딩"이 정해진 경로다 — `mcp_server/server.py`를 그대로 작성한다.
+- **Phase 6**: 스킬의 "Anthropic Directory 제출" 체크리스트는 원격 배포 서버 대상이라 이번 스코프에 해당하지 않는다. 대신 "Claude Code에 실제로 연결해 Tool을 호출해본다"는 원칙만 적용하며, 6.4절의 등록·연결 확인 절차로 충족한다.
+
+이 결과는 기존 6절 스펙(정상 흐름·입력 검증·에러 응답·등록 방식)과 동일하다 — 스킬의 프레임워크로 설계를
+재확인한 것이며 바꾸지 않았다.
 
 ---
 
@@ -143,7 +179,17 @@ def predict_luminance(input_data: dict) -> float:
     models/luminance_model.cbm을 로드해 luminance_cd_m2를 반환한다."""
 ```
 
-내부 동작: 모델 로드(모듈 임포트 시 1회) → 12개 Feature 벡터로 변환 → `model.predict()` → `float` 반환.
+내부 동작: `catboost` import는 모듈 로드 시 최상단에서 즉시 한다. `.cbm` 모델 파일 로드(`model.load_model()`)만
+`predict_luminance()` 첫 호출 시점까지 지연한다 → 12개 Feature 벡터로 변환 → `model.predict()` → `float` 반환.
+
+**`catboost` import를 지연시키지 않는 이유(디버깅으로 확인된 실제 버그)**: 처음엔 "catboost import가 무거워서
+서버 기동(stdio 핸드셰이크)이 타임아웃날 수 있다"고 추측해 import 자체를 `predict_luminance()` 호출 시점까지
+지연시켰다. 그런데 실제로는 catboost import 자체는 1~2초로 가볍고, 문제는 다른 데 있었다 — FastMCP는 동기
+Tool 함수를 `anyio.to_thread.run_sync()`로 워커 스레드에서 실행하는데, **그 워커 스레드 안에서 catboost를
+처음 import하면 이벤트 루프가 동시에 stdio 비동기 I/O를 처리하는 것과 맞물려 응답 없이 멈춘다**(재현 확인 —
+동일 import를 격리 실행하면 1~2초, MCP 서버 안에서 지연 import로 실행하면 응답이 아예 안 옴). import를
+모듈 최상단(메인 스레드, 이벤트 루프 시작 전)으로 옮기니 3초 만에 정상 응답했다. `.cbm` 파일 로드(디스크
+읽기만 하는 가벼운 작업)는 여전히 첫 호출까지 지연해도 문제가 없어 그대로 둔다.
 
 **모델 파일 경로 해석**: `models/luminance_model.cbm` 경로는 현재 작업 디렉터리(cwd)에 의존하지 않는다.
 Claude Code가 이 서버를 stdio로 실행할 때 `CLAUDE_PROJECT_DIR` 환경변수(프로젝트 루트)를 서버 프로세스에
@@ -158,7 +204,20 @@ Claude Code가 이 서버를 stdio로 실행할 때 `CLAUDE_PROJECT_DIR` 환경�
 
 ## 6. Phase 4 — MCP 서버
 
-**실행 방식**: stdio 기반 (원 문서 16.1절과 동일)
+이 절의 Tool 패턴(1개)·프레임워크(FastMCP)는 0절의 `mcp-server-dev` 스킬 Phase 3~4 결정을 그대로
+구체화한 것이다. 전송 방식(HTTP)만 스킬의 Phase 2 최초 권장(Local stdio)에서 사용자 요청으로 바뀌었다.
+
+**실행 방식**: HTTP(streamable-HTTP) 기반, `127.0.0.1:8090`에만 바인딩한 로컬 전용 서버 — 이 컴퓨터
+밖에서는 접근할 수 없다. 원 문서 16.1절은 stdio를 예시로 들지만 이 프로젝트에서는 HTTP로 대체했다.
+Claude Code처럼 stdio 서버를 자동으로 실행해주는 클라이언트와 달리, HTTP 서버는 Claude Code가 대신
+띄워주지 않는다 — **Claude Code에서 이 도구를 쓰려면 먼저 사람이 직접 서버를 실행해둬야 한다**:
+```bash
+py -3.12 mcp_server/server.py
+```
+`python`이 아니라 `py -3.12`로 실행하는 이유: 이 컴퓨터의 기본 `python`은 3.9인데 `fastmcp`/`mcp` SDK는
+Python 3.10 이상이 필요하다(원 요구사항 문서에는 없던 제약이며, 이번 구현에서 Python 3.12를 새로 설치해
+해결했다). `py` 런처로 버전을 고정해 어떤 셸에서 실행해도 같은 인터프리터를 쓰게 한다.
+
 **파일**: `mcp_server/server.py`
 **Tool**: `predict_luminance` 1개만 등록.
 
@@ -207,7 +266,7 @@ Claude Code가 이 서버를 stdio로 실행할 때 `CLAUDE_PROJECT_DIR` 환경�
 ### 6.4 Claude Code 등록 및 테스트 (`code.claude.com/docs/ko/mcp` 기준)
 
 원 요구사항 문서 11.1절의 "AI Agent" Client는 이번 프로젝트에서는 Claude Code를 가리킨다. Claude Code가
-이 stdio 서버에 연결하려면 등록이 필요하다.
+이 HTTP 서버에 연결하려면 등록이 필요하다.
 
 **등록 방식**: project 범위. 저장소 루트에 `.mcp.json`을 커밋해 클론한 사람 누구나 같은 서버를 쓸 수 있게 한다
 (local 범위는 이 컴퓨터에서만 비공개로 등록되어 코칭·발표에서 재현이 안 된다).
@@ -216,24 +275,21 @@ Claude Code가 이 서버를 stdio로 실행할 때 `CLAUDE_PROJECT_DIR` 환경�
 {
   "mcpServers": {
     "oled-luminance": {
-      "type": "stdio",
-      "command": "py",
-      "args": ["-3.12", "mcp_server/server.py"],
-      "env": {}
+      "type": "http",
+      "url": "http://127.0.0.1:8090/mcp"
     }
   }
 }
 ```
 
-`command`를 `python`이 아니라 `py`/`-3.12`로 명시한 이유: 이 컴퓨터의 기본 `python`은 3.9인데
-`fastmcp`/`mcp` SDK는 Python 3.10 이상이 필요하다(원 요구사항 문서에는 없던 제약이며,
-이번 구현에서 Python 3.12를 새로 설치해 해결했다). `py` 런처로 버전을 고정해 어떤 셸에서 실행해도
-같은 인터프리터를 쓰게 한다.
+stdio 등록과 달리 `command`/`args`/`env`가 없다 — HTTP 서버는 Claude Code가 대신 실행해주지 않으므로,
+연결하기 전에 사람이 먼저 `py -3.12 mcp_server/server.py`로 서버를 띄워둬야 한다(위 "실행 방식" 참고).
+서버가 안 떠 있으면 `claude mcp list`에서 연결 실패로 뜬다.
 
-CLI로 동일하게 등록할 수도 있다 (`--` 뒤가 실제 실행 명령):
+CLI로 동일하게 등록할 수도 있다:
 
 ```bash
-claude mcp add --transport stdio --scope project oled-luminance -- py -3.12 mcp_server/server.py
+claude mcp add --transport http --scope project oled-luminance http://127.0.0.1:8090/mcp
 ```
 
 **최초 승인**: project 범위 서버는 처음 쓸 때 신뢰 승인이 필요하다. Claude Code를 대화형으로 한 번 실행해
@@ -308,6 +364,9 @@ Model Interface 추상화 레이어(원 문서 9.2절)도 만들지 않는다 �
 - Feature Importance, SHAP, 설명가능성
 - Model Interface 추상화 (LightGBM/XGBoost/NN 교체 가능 구조)
 - 물리 관계를 반영한 Dataset 생성 (완전 랜덤으로 결정)
-- HTTP/SSE 등 stdio 외 실행 방식
-- OAuth 등 원격 서버 인증 (이 서버는 로컬 stdio라 해당 없음)
+- 외부에서 접근 가능한 공개 배포 (Cloudflare Workers 등) — HTTP 전송은 쓰지만 `127.0.0.1`에만 바인딩한 로컬 전용이다. 스킬이 말하는 "진짜" 원격 HTTP(누구나 URL로 접속)는 아니다.
+- SSE 전송 (streamable-HTTP만 사용)
+- OAuth 등 원격 서버 인증 (로컬 전용이라 외부 노출이 없어 해당 없음)
 - local/user 범위 등록 (project 범위 `.mcp.json` 하나만 쓴다)
+- MCPB 패키징 — `mcp-server-dev` 스킬이 Local stdio 선택 시 항상 권장하는 배포 업그레이드 경로(0절 Phase 2 참고). 이 프로젝트는 배포 대상이 아닌 개인 프로토타입이라 비범위로 둔다.
+- Anthropic Directory 제출, 원격 커넥터로서의 리뷰 기준 통과 (스킬 Phase 6은 진짜 원격 배포 서버 대상 — 이 프로젝트는 로컬 전용이라 해당 없음)

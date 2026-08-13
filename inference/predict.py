@@ -1,5 +1,7 @@
 import os
 
+from catboost import CatBoostRegressor
+
 # 순서가 models/train_model.py의 FEATURE_ORDER와 반드시 동일해야 한다.
 FEATURE_ORDER = [
     "host_homo",
@@ -23,15 +25,14 @@ _model = None
 
 
 def _load_model():
-    # catboost import는 무겁다(수 초) — predict_luminance()가 처음 호출될 때까지 미룬다.
-    # MCP 서버 기동 시 이 모듈이 import되는 순간 catboost까지 로드되면
-    # stdio 연결 타임아웃을 넘겨 CONNECTION_CLOSED가 날 수 있다.
+    # catboost import는 모듈 최상단(메인 스레드, 이벤트 루프 시작 전)에서 미리 해둔다.
+    # FastMCP는 동기 Tool 함수를 anyio.to_thread.run_sync()로 워커 스레드에서 실행하는데,
+    # 그 워커 스레드 안에서 "첫" catboost import를 하면 이벤트 루프의 동시 stdio 비동기 I/O와
+    # 맞물려 응답 없이 멈추는 문제가 있었다(재현 확인됨). .cbm 파일 로드만 여기서 지연 수행한다.
     global _model
     if _model is None:
         if not os.path.exists(_MODEL_PATH):
             raise FileNotFoundError(f"model file not found: {_MODEL_PATH}")
-        from catboost import CatBoostRegressor
-
         model = CatBoostRegressor()
         model.load_model(_MODEL_PATH)
         _model = model

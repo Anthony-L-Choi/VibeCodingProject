@@ -3,7 +3,7 @@
   "meta": {
     "updated": "2026-08-13",
     "context_doc": "SPEC.md",
-    "note": "OLED Luminance 예측 MCP 서버 작업 SSOT — 상세 기준은 각 작업의 summary와 note에 있다"
+    "note": "OLED Luminance 예측 MCP 서버 작업 SSOT — 상세 기준은 각 작업의 summary와 note에 있다. MCP 서버 설계(LB-107, LB-108)는 mcp-server-dev 스킬의 Phase 1~6 프레임워크로 도출했다(SPEC.md#0)."
   },
   "enums": {
     "status": [
@@ -125,15 +125,15 @@
       "priority": "핵심",
       "category": "화면",
       "title": "MCP 서버 스캐폴딩 및 predict_luminance Tool 등록 (정상 입력만)",
-      "summary": "완료: stdio로 MCP 서버를 실행한 뒤 predict_luminance Tool을 정상 샘플 입력으로 호출하면 `luminance_cd_m2` 필드를 가진 JSON 응답이 온다",
+      "summary": "완료: MCP 서버를 실행한 뒤 predict_luminance Tool을 정상 샘플 입력으로 호출하면 `luminance_cd_m2` 필드를 가진 JSON 응답이 온다 (최초엔 stdio로 확인했고, 이후 LB-111에서 HTTP로 전송 방식을 바꾼 뒤에도 재확인함)",
       "where": "mcp_server/server.py",
       "parent": null,
       "deps": [
         "LB-106"
       ],
-      "doc": "SPEC.md#6.1",
+      "doc": "SPEC.md#0, SPEC.md#6.1",
       "done_at": "2026-08-13T11:41:53",
-      "note": "이 작업에서는 입력 검증을 넣지 않는다(LB-109에서 추가). Tool은 predict_luminance 1개만 등록한다. 현재 이 컴퓨터의 Python이 3.9.13뿐이라 공식 MCP SDK(3.10+ 필요) 설치가 안 되어 blocked — 사용자가 Python 3.10+ 설치 후 재개."
+      "note": "이 작업에서는 입력 검증을 넣지 않는다(LB-109에서 추가). Tool은 predict_luminance 1개만 등록한다 — mcp-server-dev 스킬 Phase 3(Action 15개 미만 → one tool per action) 결정. 프레임워크는 FastMCP(Phase 4: Python 라이브러리 래핑 시 권장). 현재 이 컴퓨터의 Python이 3.9.13뿐이라 공식 MCP SDK(3.10+ 필요) 설치가 안 되어 blocked — 사용자가 Python 3.10+ 설치 후 재개."
     },
     {
       "id": "LB-108",
@@ -141,15 +141,15 @@
       "priority": "핵심",
       "category": "화면",
       "title": ".mcp.json 작성 및 Claude Code 등록",
-      "summary": "완료: `claude mcp list` 실행 시 `oled-luminance`가 나열되고, Claude Code 세션에서 `/mcp`로 확인하면 predict_luminance Tool 1개가 보인다",
+      "summary": "완료: `claude mcp list` 실행 시 `oled-luminance`가 나열되고, Claude Code 세션에서 `/mcp`로 확인하면 predict_luminance Tool 1개가 보인다 (등록 방식 자체는 LB-111에서 stdio→HTTP로 바뀜, 이 작업의 완료 조건 자체는 그대로 유효)",
       "where": ".mcp.json",
       "parent": null,
       "deps": [
         "LB-107"
       ],
-      "doc": "SPEC.md#6.4",
+      "doc": "SPEC.md#0, SPEC.md#6.4",
       "done_at": "2026-08-13T11:54:21",
-      "note": "project 범위로 저장소에 커밋한다(local 범위는 개인 전용이라 코칭·발표에서 재현이 안 됨). 최초 사용 시 Claude Code를 대화형으로 한 번 실행해 신뢰 승인을 통과해야 한다. .mcp.json은 만들어 커밋했고 claude mcp list에서 인식은 되지만 \"Pending approval\" 상태 — 사용자가 대화형 claude 세션에서 승인해야 완료된다. catboost import를 predict_luminance() 첫 호출 시점으로 지연시켜(inference/predict.py) 서버 기동 시간을 줄인 뒤 claude mcp list에서 Connected로 확인됨."
+      "note": "project 범위로 저장소에 커밋한다(local 범위는 개인 전용이라 코칭·발표에서 재현이 안 됨). 최초 사용 시 Claude Code를 대화형으로 한 번 실행해 신뢰 승인을 통과해야 한다. .mcp.json은 만들어 커밋했고 claude mcp list에서 인식은 되지만 \"Pending approval\" 상태 — 사용자가 대화형 claude 세션에서 승인해야 완료된다. 최초 stdio 등록은 mcp-server-dev 스킬 Phase 2 결정(개인 프로토타입 한정 권장)과 일치했었다 — 이후 LB-111에서 HTTP로 바뀜. 배포용 MCPB 업그레이드는 SPEC.md#9에서 비범위로 명시.\n\n[정정, 데모 웹페이지 제작 중 발견] 원래 이 작업 때 \"catboost import를 predict_luminance() 첫 호출 시점으로 지연시켜 서버 기동 시간을 줄였다\"고 적었던 건 틀린 원인 분석이었다 — catboost import 자체는 1~2초로 가볍다. 실제로는 그 지연 로딩이 FastMCP의 워커 스레드(anyio.to_thread.run_sync) 안에서 catboost를 처음 import할 때 이벤트 루프의 동시 stdio 비동기 I/O와 맞물려 응답 없이 멈추는 버그의 원인이었다(재현 확인, 응답 없음이 수 분~무한 지속). import를 모듈 최상단(메인 스레드, 이벤트 루프 시작 전)으로 옮겨 수정했다 — SPEC.md#5 참고."
     },
     {
       "id": "LB-109",
@@ -182,6 +182,22 @@
       "doc": "SPEC.md#6.3",
       "done_at": "2026-08-13T11:41:53",
       "note": "SPEC.md 6.3 에러 코드 표 기준. DATABASE_NOT_INITIALIZED·DATASET_NOT_FOUND는 이번 스코프에 없으므로 구현하지 않는다."
+    },
+    {
+      "id": "LB-111",
+      "status": "done",
+      "priority": "핵심",
+      "category": "화면",
+      "title": "MCP 전송 방식을 stdio에서 로컬 전용 HTTP로 변경",
+      "summary": "완료: `mcp_server/server.py`를 실행하면 `http://127.0.0.1:8090/mcp`에서 응답하고, 이 URL로 predict_luminance를 호출하면 정상 결과가 온다. `.mcp.json`도 `type: http` + `url`로 바뀌었다",
+      "where": "mcp_server/server.py, .mcp.json, PLAN.md, SPEC.md",
+      "parent": null,
+      "deps": [
+        "LB-108"
+      ],
+      "doc": "SPEC.md#6, SPEC.md#6.4",
+      "done_at": "2026-08-13T15:15:00",
+      "note": "사용자 요청으로 전송 방식을 stdio에서 HTTP로 바꿨다. PLAN.md③의 \"MCP Tool(stdio) 1개\" 요구사항도 \"MCP Tool(HTTP, 로컬 전용) 1개\"로 같이 수정해 계약과 구현이 어긋나지 않게 했다. 127.0.0.1에만 바인딩한 로컬 전용이며 외부 공개 배포(Cloudflare Workers 등)는 하지 않는다 — SPEC.md#9에 비범위로 명시. HTTP 서버는 stdio와 달리 Claude Code가 대신 실행해주지 않으므로, 연결 전에 사람이 먼저 `py -3.12 mcp_server/server.py`로 띄워둬야 한다. fastmcp Client로 `http://127.0.0.1:8090/mcp`에 직접 접속해 list_tools/call_tool 모두 정상 동작 확인함."
     }
   ]
 }

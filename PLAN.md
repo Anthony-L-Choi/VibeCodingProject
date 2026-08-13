@@ -14,7 +14,7 @@
 - 쓸 도구 (서브에이전트·MCP·스킬·hook·병렬 중 필요한 것만): 없음
 
 ## ③ 범위 — 반드시 / 되면 좋은 / 안 하는 것
-- 반드시 (이게 안 되면 실패): Synthetic OLED Dataset 생성 + CatBoost 모델 생성(성능 목표 없이 학습만) + `predict_luminance` MCP Tool(stdio) 1개 제공
+- 반드시 (이게 안 되면 실패): Synthetic OLED Dataset 생성 + CatBoost 모델 생성(성능 목표 없이 학습만) + `predict_luminance` MCP Tool(HTTP, 이 컴퓨터에서만 접근 가능한 로컬 전용) 1개 제공
 - 되면 좋은: 없음
 - 이번엔 안 하는 것: `search_oled_devices`, `inverse_design_oled`, SQLite 구축, CatBoost 성능 검증(R² 기준), Feature Importance/설명가능성
 
@@ -46,6 +46,9 @@ https://github.com/Anthony-L-Choi/VibeCodingProject
 ## 되돌아갈 지점과 데이터
 - 되돌리는 방법: `git init` + 첫 커밋(`e51dbbb`) 완료. 이후 문제 생기면 이 커밋으로 되돌린다.
 - 실데이터·자격증명 없이 되게 만드는 방법 (샘플로 대체할 부분): 프로젝트 전체가 Synthetic Dataset(Phase 1) 기반이라 실데이터 불필요. 물성값(HOMO/LUMO/T1/S1)·Operating Condition은 요구사항 문서의 예시 형식을 따라 직접 생성한다.
+
+## 변경 이력
+- 최초 계약은 `predict_luminance` Tool을 stdio로 제공하는 것이었다. 이후 사용자 요청으로 전송 방식을 HTTP로 바꿨다(`SPEC.md#6` 참고) — 이 컴퓨터에서만 접근 가능한 로컬 전용 HTTP이며, 외부 공개 배포는 하지 않는다. `mcp-server-dev` 스킬의 Phase 2 권장(개인 프로토타입은 stdio)과는 다른 선택이지만, 이번 프로젝트에서는 사용자가 명시적으로 HTTP를 선택했다.
 
 ## 고칠 곳 (4단계 반박 결과)
 1. [③④] Phase 1~4의 "완료:" 기준이 전부 결과물의 **존재 여부**만 확인한다 (건수, 파일 존재, 반환값 존재). Dataset이 물리적으로 타당한 관계(HOMO/LUMO 정렬 등)를 반영했는지, 모델이 실제로 유의미하게 학습했는지는 어떤 Phase도 검증하지 않는다.
