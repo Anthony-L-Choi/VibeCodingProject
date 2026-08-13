@@ -93,7 +93,7 @@
       "deps": ["LB-105"],
       "doc": "SPEC.md#5",
       "done_at": null,
-      "note": "모델은 모듈 임포트 시 1회만 로드한다. 11개 수치 Feature 순서는 LB-104에서 학습 때 쓴 순서와 반드시 동일해야 한다."
+      "note": "모델은 모듈 임포트 시 1회만 로드한다. 11개 수치 Feature 순서는 LB-104에서 학습 때 쓴 순서와 반드시 동일해야 한다. 모델 파일 경로는 os.environ.get('CLAUDE_PROJECT_DIR', '.') 기준으로 만든다(SPEC.md 5절)."
     },
     {
       "id": "LB-107",
@@ -107,10 +107,24 @@
       "deps": ["LB-106"],
       "doc": "SPEC.md#6.1",
       "done_at": null,
-      "note": "이 작업에서는 입력 검증을 넣지 않는다(LB-108에서 추가). Tool은 predict_luminance 1개만 등록한다."
+      "note": "이 작업에서는 입력 검증을 넣지 않는다(LB-109에서 추가). Tool은 predict_luminance 1개만 등록한다."
     },
     {
       "id": "LB-108",
+      "status": "todo",
+      "priority": "핵심",
+      "category": "화면",
+      "title": ".mcp.json 작성 및 Claude Code 등록",
+      "summary": "완료: `claude mcp list` 실행 시 `oled-luminance`가 나열되고, Claude Code 세션에서 `/mcp`로 확인하면 predict_luminance Tool 1개가 보인다",
+      "where": ".mcp.json",
+      "parent": null,
+      "deps": ["LB-107"],
+      "doc": "SPEC.md#6.4",
+      "done_at": null,
+      "note": "project 범위로 저장소에 커밋한다(local 범위는 개인 전용이라 코칭·발표에서 재현이 안 됨). 최초 사용 시 Claude Code를 대화형으로 한 번 실행해 신뢰 승인을 통과해야 한다."
+    },
+    {
+      "id": "LB-109",
       "status": "todo",
       "priority": "검증",
       "category": "검증",
@@ -124,7 +138,7 @@
       "note": "SPEC.md 6.2/6.3 형식 그대로 — 범위 검증은 하지 않고 필드 존재·JSON 구조·타입만 확인한다."
     },
     {
-      "id": "LB-109",
+      "id": "LB-110",
       "status": "todo",
       "priority": "검증",
       "category": "검증",
@@ -138,7 +152,7 @@
       "note": "SPEC.md 6.3 에러 코드 표 기준. DATABASE_NOT_INITIALIZED·DATASET_NOT_FOUND는 이번 스코프에 없으므로 구현하지 않는다."
     },
     {
-      "id": "LB-110",
+      "id": "LB-111",
       "status": "todo",
       "priority": "나중",
       "category": "화면",
@@ -149,10 +163,10 @@
       "deps": [],
       "doc": "SPEC.md#9",
       "done_at": null,
-      "note": "SPEC.md 9절 비범위. SQLite 구축(LB-112) 이후에나 가능하다. 오늘은 만들지 않는다."
+      "note": "SPEC.md 9절 비범위. SQLite 구축(LB-113) 이후에나 가능하다. 오늘은 만들지 않는다."
     },
     {
-      "id": "LB-111",
+      "id": "LB-112",
       "status": "todo",
       "priority": "나중",
       "category": "화면",
@@ -166,7 +180,7 @@
       "note": "SPEC.md 9절 비범위. predict_luminance(LB-107)를 후보 생성에 재사용하는 구조로 설계해야 한다. 오늘은 만들지 않는다."
     },
     {
-      "id": "LB-112",
+      "id": "LB-113",
       "status": "todo",
       "priority": "나중",
       "category": "저장",
@@ -177,10 +191,10 @@
       "deps": [],
       "doc": "SPEC.md#9",
       "done_at": null,
-      "note": "search_oled_devices(LB-110)의 선행 작업이다. 오늘은 만들지 않는다."
+      "note": "search_oled_devices(LB-111)의 선행 작업이다. 오늘은 만들지 않는다."
     },
     {
-      "id": "LB-113",
+      "id": "LB-114",
       "status": "todo",
       "priority": "나중",
       "category": "검증",
@@ -194,7 +208,7 @@
       "note": "PLAN.md ③에서 이번 스코프 밖으로 명시적으로 뺀 항목이다. 원 문서 14.1절 기준을 참고한다."
     },
     {
-      "id": "LB-114",
+      "id": "LB-115",
       "status": "todo",
       "priority": "나중",
       "category": "환경",
@@ -208,7 +222,7 @@
       "note": "원 문서 9.2절 목표. 지금은 train_model.py/predict.py가 CatBoost API를 직접 호출하는 최소 구현으로 정했다(SPEC.md 결정표)."
     },
     {
-      "id": "LB-115",
+      "id": "LB-116",
       "status": "todo",
       "priority": "나중",
       "category": "저장",

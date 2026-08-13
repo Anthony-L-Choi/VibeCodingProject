@@ -10,6 +10,11 @@
 | `predict_luminance` 입력 스키마 | EML(Host/Dopant) + 구동조건만 간소화 (7-Layer 전체 아님) |
 | 입력 검증·에러 응답 | 포함 (원 문서 10.4절 공통 에러 스키마 사용) |
 | 아키텍처 수준 | 최소 구현 (Model Interface 추상화 없음, CatBoost 직접 사용) |
+| MCP 서버 등록 범위 | project 범위 — `.mcp.json`을 저장소에 커밋해 팀·코칭 리뷰어와 공유 (아래 6.4절 참고) |
+
+`code.claude.com/docs/ko/mcp` 문서를 참고해 Claude Code가 MCP 서버에 연결하는 방식(등록 명령·범위·환경변수)을
+6.4절에 반영했다. 이 문서는 Claude Code가 클라이언트로서 서버에 *연결*하는 방법을 설명할 뿐, 서버 코드 자체를
+Python으로 작성하는 방법은 다루지 않는다 — 서버 구현은 기존 5·6절 스펙을 그대로 따른다.
 
 ---
 
@@ -140,6 +145,12 @@ def predict_luminance(input_data: dict) -> float:
 
 내부 동작: 모델 로드(모듈 임포트 시 1회) → 11개 Feature 벡터로 변환 → `model.predict()` → `float` 반환.
 
+**모델 파일 경로 해석**: `models/luminance_model.cbm` 경로는 현재 작업 디렉터리(cwd)에 의존하지 않는다.
+Claude Code가 이 서버를 stdio로 실행할 때 `CLAUDE_PROJECT_DIR` 환경변수(프로젝트 루트)를 서버 프로세스에
+주입해 준다(`code.claude.com/docs/ko/mcp` 참고). `os.environ.get("CLAUDE_PROJECT_DIR", ".")`를 기준으로
+`models/luminance_model.cbm` 경로를 만든다 — Claude Code 밖에서(`python inference/predict.py`처럼) 직접
+실행할 때는 폴백값 `"."`이 쓰인다.
+
 **완료 조건 (PLAN ④-3)**: input 값을 넣었을 때 Luminance 결과값이 나오는 module이 존재한다.
 **확인 방법**: `python -c "from inference.predict import predict_luminance; print(predict_luminance({...샘플...}))"` → 숫자 출력.
 
@@ -193,6 +204,49 @@ def predict_luminance(input_data: dict) -> float:
 **완료 조건 (PLAN ④-4)**: MCP 서버를 실행한 뒤 `predict_luminance` Tool을 샘플 입력으로 호출하면 `luminance` 필드를 가진 응답이 온다.
 **확인 방법**: MCP client(또는 stdio 테스트 스크립트)로 샘플 입력 호출 → 응답 JSON에 `luminance_cd_m2` 존재 확인. 추가로 필수 필드 하나를 빼고 호출 → `VALIDATION_ERROR` 응답 확인.
 
+### 6.4 Claude Code 등록 및 테스트 (`code.claude.com/docs/ko/mcp` 기준)
+
+원 요구사항 문서 11.1절의 "AI Agent" Client는 이번 프로젝트에서는 Claude Code를 가리킨다. Claude Code가
+이 stdio 서버에 연결하려면 등록이 필요하다.
+
+**등록 방식**: project 범위. 저장소 루트에 `.mcp.json`을 커밋해 클론한 사람 누구나 같은 서버를 쓸 수 있게 한다
+(local 범위는 이 컴퓨터에서만 비공개로 등록되어 코칭·발표에서 재현이 안 된다).
+
+```json
+{
+  "mcpServers": {
+    "oled-luminance": {
+      "type": "stdio",
+      "command": "python",
+      "args": ["mcp_server/server.py"],
+      "env": {}
+    }
+  }
+}
+```
+
+CLI로 동일하게 등록할 수도 있다 (`--` 뒤가 실제 실행 명령):
+
+```bash
+claude mcp add --transport stdio --scope project oled-luminance -- python mcp_server/server.py
+```
+
+**최초 승인**: project 범위 서버는 처음 쓸 때 신뢰 승인이 필요하다. Claude Code를 대화형으로 한 번 실행해
+승인 대화상자를 통과해야 `claude mcp list`에 "⏸ 승인 대기 중"이 아니라 정상 연결로 뜬다.
+
+**연결 확인**:
+
+```bash
+claude mcp list        # oled-luminance가 나열되는지
+claude mcp get oled-luminance
+```
+
+Claude Code 세션 안에서는 `/mcp`로 연결 상태와 노출된 Tool 개수(1개)를 확인한다.
+
+**Tool 설명 작성 규칙**: `predict_luminance`의 `description`은 Tool Search가 언제 이 도구를 찾아 쓸지
+판단하는 근거이므로, 무엇을 예측하는지·언제 쓰는지를 앞부분에 명확히 적는다 (2KB 넘으면 잘린다 — 이번
+스코프에서는 문제되지 않는 길이).
+
 ---
 
 ## 7. 디렉터리 구조 (최소 구현)
@@ -203,6 +257,7 @@ practice/
 ├── SPEC.md
 ├── OLED_Luminance_Prediction_MCP_Server_Requirements_v1.0.md
 ├── requirements.txt
+├── .mcp.json
 │
 ├── data/
 │   ├── generate_dataset.py
@@ -232,6 +287,7 @@ Model Interface 추상화 레이어(원 문서 9.2절)도 만들지 않는다 �
 | 2 | `models/*.cbm` 존재 | `python -c "import os;assert os.path.exists('models/luminance_model.cbm')"` |
 | 3 | `predict_luminance()` 호출 시 숫자 반환 | `python -c "from inference.predict import predict_luminance; print(predict_luminance({...}))"` |
 | 4 | MCP Tool 호출 시 `luminance_cd_m2` 필드 응답 | MCP client로 샘플 호출 |
+| 4-등록 | Claude Code가 서버에 연결됨 | `claude mcp list`에 `oled-luminance` 표시, 세션 내 `/mcp`로 확인 |
 
 사람이 눈으로 보는 것: 없음 (PLAN ⑤와 동일)
 승인 지점: Git 커밋/초기화 시점 (이미 완료 — `e51dbbb`)
@@ -248,3 +304,5 @@ Model Interface 추상화 레이어(원 문서 9.2절)도 만들지 않는다 �
 - Model Interface 추상화 (LightGBM/XGBoost/NN 교체 가능 구조)
 - 물리 관계를 반영한 Dataset 생성 (완전 랜덤으로 결정)
 - HTTP/SSE 등 stdio 외 실행 방식
+- OAuth 등 원격 서버 인증 (이 서버는 로컬 stdio라 해당 없음)
+- local/user 범위 등록 (project 범위 `.mcp.json` 하나만 쓴다)
