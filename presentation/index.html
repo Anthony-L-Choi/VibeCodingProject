@@ -1,4 +1,5 @@
-<title>OLED Luminance 예측 MCP — 프로젝트 소개</title>
+<meta charset="utf-8">
+<title>OLED 소자 특성 예측 MCP — 프로젝트 소개</title>
 
 <style>
   :root {
@@ -437,6 +438,14 @@
 
   /* ---------- numbered usage steps ---------- */
   .steps { display: flex; flex-direction: column; gap: clamp(14px, 2.4vh, 22px); }
+  .steps-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: repeat(3, auto);
+    grid-auto-flow: column;
+    gap: clamp(14px, 2.4vh, 22px) clamp(24px, 3.6vw, 48px);
+  }
+  @media (max-width: 700px) { .steps-grid { grid-template-columns: 1fr; } }
   .step { display: grid; grid-template-columns: 2.4em 1fr; gap: 16px; align-items: start; }
   .step .step-num {
     width: 2.4em;
@@ -560,19 +569,17 @@
 <nav class="rail" id="rail" aria-label="섹션 이동">
   <a href="#hero"><span class="tip">시작</span></a>
   <a href="#problem"><span class="tip">왜 필요한가</span></a>
-  <a href="#feature"><span class="tip">핵심 기능</span></a>
-  <a href="#schema"><span class="tip">입력 스키마</span></a>
-  <a href="#howitworks"><span class="tip">작동 원리</span></a>
-  <a href="#usage"><span class="tip">사용 방법</span></a>
-  <a href="#errors"><span class="tip">에러 응답</span></a>
+  <a href="#dev-pipeline"><span class="tip">개발 파이프라인</span></a>
+  <a href="#own-process"><span class="tip">진행 순서</span></a>
+  <a href="#ai-scope"><span class="tip">AI 위임</span></a>
+  <a href="#verify"><span class="tip">검증</span></a>
   <a href="#demo"><span class="tip">데모</span></a>
-  <a href="#scope"><span class="tip">범위와 한계</span></a>
   <a href="#closing"><span class="tip">마무리</span></a>
 </nav>
 
 <div class="slide-nav" aria-label="슬라이드 이동">
   <button id="prevSlide" aria-label="이전 슬라이드" type="button">↑</button>
-  <span class="count" id="slideCount">01 / 10</span>
+  <span class="count" id="slideCount">01 / 07</span>
   <button id="nextSlide" aria-label="다음 슬라이드" type="button">↓</button>
 </div>
 
@@ -582,12 +589,13 @@
       <div class="hero-grid">
         <div>
           <p class="eyebrow">MCP Tool · OLED 소자 특성 예측</p>
-          <h1 class="title">OLED 소자 <em>Luminance</em><br>예측 MCP 서버</h1>
+          <h1 class="title">OLED 소자 <em>특성</em><br>예측 MCP 서버</h1>
           <p class="lede" style="margin-top:20px;">
             EML(발광층) Host/Dopant 물성치와 구동조건을 넣으면, CatBoost 모델이
             Luminance(cd/m²)를 예측해 돌려주는 MCP Tool이다.
           </p>
           <div class="hero-meta">
+            <span>발표자 <b>최현호</b></span>
             <span>등록 Tool <b>1</b>개</span>
             <span>입력 필드 <b>14</b>개</span>
             <span>전송 방식 <b>로컬 HTTP</b></span>
@@ -629,7 +637,7 @@
         <h2 class="section-title">신소재 조합 검토, 반복되는 5일</h2>
       </div>
       <div class="slide-body">
-        <p class="lede">OLED 소자 설계 연구원이 새 Host/Dopant 조합을 검토할 때마다, 물성치를 넣고 결과를 확인하는 과정을 처음부터 반복한다.</p>
+        <p class="lede">OLED 소자 설계 연구원이 새로운 소자 조합을 검토할 때마다, 직접 소자 조합 하나를 검토하는 데 5일 정도 걸리는 반복 작업이었다.</p>
         <div class="stat-row">
           <div class="stat"><div class="n">5일</div><div class="d">신소재 조합 1건을 검토하는 데 걸리는 시간</div></div>
           <div class="stat"><div class="n">14개</div><div class="d">Tool 하나에 넣는 입력 필드 수</div></div>
@@ -644,186 +652,170 @@
   </div>
 </section>
 
-<section id="feature">
+<section id="dev-pipeline">
   <div class="slide">
     <div class="wrap-wide">
       <div class="slide-head">
-        <p class="eyebrow">핵심 기능</p>
-        <h2 class="section-title">predict_luminance — 입력 14개, 출력 1개</h2>
-      </div>
-      <div class="slide-body">
-        <p>14개 필드는 세 그룹이다 — Host 물성치 5개(ID + HOMO/LUMO/T1/S1), Dopant 물성치 5개(ID + HOMO/LUMO/T1/S1), EML 구조·구동조건 4개(두께·농도·전압·전류밀도). 이 조합으로 Luminance 하나를 예측해 반환한다.</p>
-        <div class="io-grid">
-          <div class="io-col">
-            <span class="io-label">입력</span>
-            <pre><code>{
-  "host_material_id": "HOST_001",
-  "host_homo": -5.70,
-  "host_lumo": -2.60,
-  "host_t1": 2.80,
-  "host_s1": 3.10,
-  "dopant_material_id": "DOPANT_001",
-  "dopant_homo": -5.50,
-  "dopant_lumo": -2.80,
-  "dopant_t1": 2.50,
-  "dopant_s1": 2.90,
-  "eml_thickness_nm": 30.0,
-  "dopant_concentration_percent": 8.0,
-  "voltage_v": 4.2,
-  "current_density_ma_cm2": 10.0
-}</code></pre>
-          </div>
-          <div class="io-col out">
-            <span class="io-label">출력</span>
-            <pre><code>{
-  "luminance_cd_m2": 12543.2
-}</code></pre>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section id="schema">
-  <div class="slide">
-    <div class="wrap">
-      <div class="slide-head">
-        <p class="eyebrow">입력 스키마</p>
-        <h2 class="section-title">Host/Dopant 물성치와 구동조건</h2>
-      </div>
-      <div class="slide-body">
-        <p style="color:var(--muted); font-size:0.94rem;">학습 데이터가 이 범위 안에서 생성됐다 — 값의 정확도를 보장하는 기준은 아니다.</p>
-        <div class="table-scroll">
-          <table>
-            <thead><tr><th>필드</th><th>의미</th><th>범위</th></tr></thead>
-            <tbody>
-              <tr><td>HOMO (eV)</td><td>최고 점유 분자궤도 준위 — 정공 주입과 관련</td><td class="mono">−6.0 ~ −5.0</td></tr>
-              <tr><td>LUMO (eV)</td><td>최저 비점유 분자궤도 준위 — 전자 주입과 관련</td><td class="mono">−3.0 ~ −2.0</td></tr>
-              <tr><td>T1 (eV)</td><td>삼중항 여기 에너지</td><td class="mono">2.0 ~ 3.0</td></tr>
-              <tr><td>S1 (eV)</td><td>단일항 여기 에너지</td><td class="mono">2.5 ~ 3.5</td></tr>
-              <tr><td>EML 두께 (nm)</td><td>발광층 두께</td><td class="mono">10 ~ 50</td></tr>
-              <tr><td>Dopant 농도 (%)</td><td>Host 대비 Dopant 도핑 비율</td><td class="mono">1 ~ 15</td></tr>
-              <tr><td>전압 (V)</td><td>소자 구동 전압</td><td class="mono">3.0 ~ 6.0</td></tr>
-              <tr><td>전류밀도 (mA/cm²)</td><td>소자 구동 전류밀도</td><td class="mono">1 ~ 20</td></tr>
-              <tr><td>Luminance (cd/m², 출력)</td><td>예측 대상 — 소자 밝기</td><td class="mono">100 ~ 30,000</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section id="howitworks">
-  <div class="slide">
-    <div class="wrap-wide">
-      <div class="slide-head">
-        <p class="eyebrow">작동 원리</p>
-        <h2 class="section-title">합성 데이터로 학습한 CatBoost 회귀 모델</h2>
+        <p class="eyebrow">개발 파이프라인</p>
+        <h2 class="section-title">기획부터 MCP Tool까지, 4단계</h2>
       </div>
       <div class="slide-body">
         <div class="pipeline">
           <div class="stage">
-            <span class="num">DATA</span>
-            <h3>합성 Dataset</h3>
-            <p style="margin:0; font-size:0.86rem; color:var(--muted);">완전 랜덤 생성, 10,000건 (물리 관계 반영 없음)</p>
+            <span class="num">PHASE 1</span>
+            <h3>샘플 Dataset 생성</h3>
+            <p style="margin:0; font-size:0.86rem; color:var(--muted);">완전 랜덤 생성, 10,000건</p>
+            <div class="done">완료: <code>data/data.json</code>에 데이터 10,000건이 있다</div>
           </div>
           <div class="arrow">→</div>
           <div class="stage">
-            <span class="num">MODEL</span>
-            <h3>CatBoost 학습</h3>
-            <p style="margin:0; font-size:0.86rem; color:var(--muted);">12개 수치 Feature, Train/Test 8,000 / 2,000 분리</p>
+            <span class="num">PHASE 2</span>
+            <h3>모델 개발</h3>
+            <p style="margin:0; font-size:0.86rem; color:var(--muted);">CatBoost 학습, 성능 목표 없음</p>
+            <div class="done">완료: <code>models/*.cbm</code> 파일로 저장되어 있다</div>
           </div>
           <div class="arrow">→</div>
           <div class="stage">
-            <span class="num">INFERENCE</span>
-            <h3>predict_luminance()</h3>
-            <p style="margin:0; font-size:0.86rem; color:var(--muted);">모델 로드 → 입력을 벡터로 변환 → 예측</p>
+            <span class="num">PHASE 3</span>
+            <h3>Inference 모듈 구축</h3>
+            <p style="margin:0; font-size:0.86rem; color:var(--muted);"><code>predict_luminance()</code> 함수</p>
+            <div class="done">완료: input을 넣으면 Luminance 결과값이 나온다</div>
           </div>
           <div class="arrow">→</div>
           <div class="stage">
-            <span class="num">MCP</span>
-            <h3>Tool 응답</h3>
-            <p style="margin:0; font-size:0.86rem; color:var(--muted);">검증 통과 시 HTTP JSON으로 결과 반환</p>
+            <span class="num">PHASE 4</span>
+            <h3>MCP 개발</h3>
+            <p style="margin:0; font-size:0.86rem; color:var(--muted);">predict_luminance Tool 등록</p>
+            <div class="done">완료: 샘플 호출 시 <code>luminance</code> 필드 응답이 온다</div>
           </div>
-        </div>
-        <div class="callout">
-          <div class="k">중요</div>
-          <p style="margin:0;">학습 데이터가 완전 무작위로 생성된 Synthetic 데이터라 예측값에 물리적 신뢰성은 없다 — MCP 파이프라인이 정상 동작하는지 확인하기 위한 프로토타입이다.</p>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<section id="usage">
+<section id="own-process">
+  <div class="slide">
+    <div class="wrap-wide">
+      <div class="slide-head">
+        <p class="eyebrow">AI 위임 전</p>
+        <h2 class="section-title">요구사항부터 규칙 문서까지, 사람이 준비한 6단계</h2>
+      </div>
+      <div class="slide-body">
+        <p class="lede">Phase 1~4 구현을 AI에게 맡기기 전에, AI가 무엇을 얼마나 정확히 만들어야 하는지부터 사람이 직접 정리했다.</p>
+        <div class="steps-grid">
+          <div class="step">
+            <span class="step-num">1</span>
+            <div>
+              <h4>요구사항 문서 작성</h4>
+              <p>ChatGPT와 대화하며 문제 정의와 요구사항을 문서로 정리.</p>
+            </div>
+          </div>
+          <div class="step">
+            <span class="step-num">2</span>
+            <div>
+              <h4>SPEC.md 작성</h4>
+              <p>요구사항 문서를 기준으로 입력/출력 스키마, 에러 코드, 전송 방식을 SPEC.md에 확정.</p>
+            </div>
+          </div>
+          <div class="step">
+            <span class="step-num">3</span>
+            <div>
+              <h4>backlog.json / tools/backlog.mjs 작성</h4>
+              <p>SPEC.md 기반으로 작업 단위를 쪼개고, 상태를 관리할 backlog.json과 읽기/쓰기 도구를 작성.</p>
+            </div>
+          </div>
+          <div class="step">
+            <span class="step-num">4</span>
+            <div>
+              <h4>CLAUDE.md 작성</h4>
+              <p>명령어, 프로젝트 구조, 항상 지킬 것을 CLAUDE.md에 정리해 AI가 참고하도록 함.</p>
+            </div>
+          </div>
+          <div class="step">
+            <span class="step-num">5</span>
+            <div>
+              <h4>rules 작성</h4>
+              <p>hooks는 사용하지 않고, <code>.claude/rules/</code>에 규칙 문서로만 제약을 명시.</p>
+            </div>
+          </div>
+          <div class="step">
+            <span class="step-num">6</span>
+            <div>
+              <h4>필요한 skills 다운로드</h4>
+              <p>작업에 필요한 skill들을 미리 준비해, AI가 위임받은 작업을 곧바로 수행할 수 있게 함.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="ai-scope">
   <div class="slide">
     <div class="wrap">
       <div class="slide-head">
-        <p class="eyebrow">사용 방법</p>
-        <h2 class="section-title">서버를 띄우고 Claude Code에 등록</h2>
+        <p class="eyebrow">AI에게 맡긴 것</p>
+        <h2 class="section-title">Phase 1~4 전부 — 사람이 짠 코드는 없다</h2>
       </div>
       <div class="slide-body">
         <div class="steps">
           <div class="step">
             <span class="step-num">1</span>
             <div>
-              <h4>서버 실행</h4>
-              <p><code>py -3.12 mcp_server/server.py</code>로 로컬 전용 HTTP 서버(127.0.0.1:8090)를 띄운다.</p>
+              <h4>Phase 1~4 구현</h4>
+              <p>Synthetic Dataset 생성, CatBoost 모델 학습, Inference 모듈, MCP 서버 개발까지 전체 파이프라인.</p>
             </div>
           </div>
           <div class="step">
             <span class="step-num">2</span>
             <div>
-              <h4>Claude Code 등록 확인</h4>
-              <p><code>.mcp.json</code>에 이미 등록돼 있다. <code>claude mcp list</code>로 연결 상태를 확인한다.</p>
-              <pre style="margin-top:10px; padding:12px 16px; font-size:0.78rem;"><code>{
-  "mcpServers": {
-    "oled-luminance": { "type": "http", "url": "http://127.0.0.1:8090/mcp" }
-  }
-}</code></pre>
+              <h4>전송 방식 리팩터링</h4>
+              <p>전송 방식을 stdio에서 로컬 전용 HTTP로 바꾸고, <code>.mcp.json</code>·PLAN.md·SPEC.md까지 함께 수정.</p>
             </div>
           </div>
           <div class="step">
             <span class="step-num">3</span>
             <div>
-              <h4>Tool 호출</h4>
-              <p>Claude Code 세션에서 <code>predict_luminance</code>를 부르면 예측값이 바로 돌아온다.</p>
+              <h4>버그 재현·수정</h4>
+              <p><code>catboost</code> import를 워커 스레드에서 메인 스레드로 옮겨, 응답이 멈추던 문제를 재현하고 고침.</p>
             </div>
           </div>
         </div>
-        <p style="color:var(--muted); font-size:0.9rem;">HTTP 서버는 Claude Code가 대신 실행해주지 않는다 — 연결하기 전에 사람이 먼저 띄워둬야 한다.</p>
+        <div class="callout">
+          <div class="k">결과</div>
+          <p style="margin:0;">사람이 직접 작성한 코드는 없다.</p>
+        </div>
       </div>
     </div>
   </div>
 </section>
 
-<section id="errors">
+<section id="verify">
   <div class="slide">
     <div class="wrap">
       <div class="slide-head">
-        <p class="eyebrow">에러 응답</p>
-        <h2 class="section-title">검증 실패 시 공통 에러 스키마</h2>
+        <p class="eyebrow">됐는지 어떻게 확인했나</p>
+        <h2 class="section-title">6개 지점에서 직접 확인</h2>
       </div>
       <div class="slide-body">
-        <p style="color:var(--muted); font-size:0.94rem;">범위 검증은 하지 않는다 — 14개 필수 필드 존재, JSON 구조, 필드 타입만 확인한다.</p>
-        <pre><code>{
-  "error": {
-    "code": "VALIDATION_ERROR",
-    "message": "Invalid predict_luminance input.",
-    "details": { "field": "host_homo", "reason": "required field missing" }
-  }
-}</code></pre>
         <div class="table-scroll">
           <table>
-            <thead><tr><th>에러 코드</th><th>발생 조건</th></tr></thead>
+            <thead><tr><th>확인 항목</th><th>방법</th></tr></thead>
             <tbody>
-              <tr><td class="mono">VALIDATION_ERROR</td><td>필수 필드 누락 · 타입 불일치 · 구조 오류</td></tr>
-              <tr><td class="mono">MODEL_NOT_LOADED</td><td><code>.cbm</code> 파일 없음 또는 로드 실패</td></tr>
-              <tr><td class="mono">INTERNAL_ERROR</td><td>그 외 서버 내부 예외</td></tr>
+              <tr><td>Dataset</td><td><code>data/data.json</code> 10,000건 생성 확인</td></tr>
+              <tr><td>모델 저장</td><td><code>models/luminance_model.cbm</code> 파일 존재 확인</td></tr>
+              <tr><td>추론 함수</td><td><code>predict_luminance()</code>가 샘플 입력에 숫자 값을 반환하는지 확인</td></tr>
+              <tr><td>MCP 응답</td><td>샘플 호출 시 <code>luminance_cd_m2</code> 응답, 필수 필드 하나를 빼고 호출해 <code>VALIDATION_ERROR</code>도 확인</td></tr>
+              <tr><td>Claude Code 연결</td><td><code>claude mcp list</code>로 서버에 정상 연결되는지 확인</td></tr>
+              <tr><td>데모 흐름</td><td><code>demo/app.py</code>에서 파싱 → MCP 응답 → 자연어 요약 전 과정이 눈으로 보이는 것 확인</td></tr>
             </tbody>
           </table>
+        </div>
+        <div class="callout">
+          <div class="k">주의</div>
+          <p style="margin:0;">학습 데이터가 완전 무작위(Synthetic)로 생성돼 예측값 자체의 물리적 신뢰성은 검증 대상이 아니다 — MCP 파이프라인이 정상 동작하는지만 확인했다.</p>
         </div>
       </div>
     </div>
@@ -870,46 +862,10 @@
   </div>
 </section>
 
-<section id="scope">
-  <div class="slide">
-    <div class="wrap">
-      <div class="slide-head">
-        <p class="eyebrow">범위와 한계</p>
-        <h2 class="section-title">지금 할 수 있는 것과 아직 없는 것</h2>
-      </div>
-      <div class="slide-body">
-        <p style="color:var(--muted); font-size:0.94rem;">Capstone 스코프 안에서 명확히 그은 경계 — 향후 확장 여지는 있지만 지금은 여기까지다.</p>
-        <div class="scope-grid">
-          <div class="scope-col must">
-            <h4>지금 되는 것</h4>
-            <ul>
-              <li><code>predict_luminance</code> MCP Tool 1개 (HTTP, 로컬 전용)</li>
-              <li>EML Host/Dopant 물성치 + 구동조건 입력</li>
-              <li>필수 필드·타입 검증과 공통 에러 응답</li>
-            </ul>
-          </div>
-          <div class="scope-col skip">
-            <h4>아직 없는 것</h4>
-            <ul>
-              <li><code>search_oled_devices</code>, <code>inverse_design_oled</code></li>
-              <li>물리 관계를 반영한 Dataset (현재 완전 랜덤)</li>
-              <li>CatBoost 성능 검증(R²), Feature Importance</li>
-              <li>외부 공개 배포 — 로컬 전용만 지원</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
 <footer class="closing" id="closing">
   <div class="slide">
     <div class="wrap">
-      <p class="eyebrow" style="justify-content:center;">마무리</p>
-      <h2>predict_luminance 하나로 OLED Luminance를 즉시 확인</h2>
-      <p class="fine">로컬 전용 HTTP · 입력 14개 · 출력 1개</p>
-      <a class="cta" href="https://github.com/Anthony-L-Choi/VibeCodingProject" target="_blank" rel="noopener">↗ 저장소 보기</a>
+      <h2>감사합니다.</h2>
     </div>
   </div>
 </footer>

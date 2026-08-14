@@ -115,7 +115,7 @@ HTML_PAGE = """<!doctype html>
 </style>
 </head>
 <body>
-<h1>oled-luminance MCP 실제 흐름 테스트</h1>
+<h1>MCP 실제 흐름 테스트</h1>
 <p class="flow">사용자 프롬프트 → (규칙 기반 파서 = 이 데모의 "에이전트") → 실제 MCP HTTP 호출(predict_luminance) → 응답 → 자연어 요약</p>
 <p class="hint">MCP_URL: http://127.0.0.1:8090/mcp — 이 데모는 서버를 대신 띄우지 않는다. 먼저 <code>py -3.12 mcp_server/server.py</code>로 서버를 실행해둬야 한다.</p>
 
@@ -134,7 +134,7 @@ dopant_concentration_percent값은 8.0입니다.
 voltage_v값은 4.2입니다.
 current_density_ma_cm2값은 10.0입니다.</textarea>
 <br>
-<button id="run">predict_luminance 실행</button>
+<button id="run">실행</button>
 <span id="status"></span>
 
 <div class="panel">
